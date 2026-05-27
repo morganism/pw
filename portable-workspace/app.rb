@@ -4,6 +4,7 @@
 require 'sinatra'
 require 'sinatra/json'
 require 'sinatra/reloader' if development?
+require 'sinatra/content_for'
 require 'sequel'
 require 'json'
 require 'dotenv/load'
@@ -90,6 +91,7 @@ end
 end
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+helpers Sinatra::ContentFor
 helpers do
   def config(key)
     row = DB[:config].where(key: key).first

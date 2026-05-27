@@ -1,0 +1,242 @@
+<!-- Settings Page -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 style="font-weight:600;letter-spacing:-0.3px;margin:0;">Settings</h5>
+    <p style="font-size:12.5px;color:var(--pw-text-2);margin:2px 0 0;">Configure your PortableWork environment</p>
+  </div>
+  <button class="btn btn-pw" id="save-all-btn" onclick="saveAll(this)">
+    <i class="bi bi-check-lg"></i> Save All
+  </button>
+</div>
+
+<div class="row g-4">
+  <!-- General -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-sliders"></i> General</div>
+      </div>
+      <div class="pw-card-body">
+        <div class="mb-3">
+          <label class="pw-label">Application Name</label>
+          <input type="text" id="cfg-app_name" class="pw-input"
+                 value="<%= @config.dig('general', 0)&.then { |_| config('app_name') } || 'PortableWork' %>">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UI -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-palette2"></i> Appearance</div>
+      </div>
+      <div class="pw-card-body">
+        <div class="mb-3">
+          <label class="pw-label">Theme</label>
+          <div style="display:flex;gap:10px;">
+            <button class="btn pw-theme-btn <%= config('theme') == 'light' ? 'btn-pw' : 'btn-ghost' %>"
+                    onclick="setThemePref('light', this)" id="theme-light">
+              <i class="bi bi-sun"></i> Light
+            </button>
+            <button class="btn pw-theme-btn <%= config('theme') == 'dark' ? 'btn-pw' : 'btn-ghost' %>"
+                    onclick="setThemePref('dark', this)" id="theme-dark">
+              <i class="bi bi-moon-stars-fill"></i> Dark
+            </button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="pw-label">Accent Color</label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="color" id="cfg-accent_color" value="<%= config('accent_color') || '#0071e3' %>"
+                   style="width:44px;height:36px;border:1px solid var(--pw-border);border-radius:var(--pw-radius-sm);padding:3px;cursor:pointer;background:transparent;">
+            <input type="text" id="cfg-accent_text" class="pw-input" style="max-width:110px;"
+                   value="<%= config('accent_color') || '#0071e3' %>">
+            <div style="display:flex;gap:6px;">
+              <% ['#0071e3','#34c759','#ff9f0a','#ff3b30','#af52de','#5856d6'].each do |c| %>
+                <button onclick="setAccent('<%= c %>')"
+                  style="width:24px;height:24px;background:<%= c %>;border:2px solid transparent;border-radius:50%;cursor:pointer;transition:transform 0.2s;"
+                  onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''">
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-github"></i> GitHub</div>
+      </div>
+      <div class="pw-card-body">
+        <div class="mb-3">
+          <label class="pw-label">GitHub Username</label>
+          <input type="text" id="cfg-github_user" class="pw-input"
+                 value="<%= config('github_user') %>" placeholder="your-username">
+        </div>
+        <div class="mb-3">
+          <label class="pw-label">Personal Access Token</label>
+          <div style="position:relative;">
+            <input type="password" id="cfg-github_token" class="pw-input"
+                   value="<%= config('github_token') %>" placeholder="ghp_xxxxxxxxxxxxx"
+                   style="padding-right:44px;">
+            <button onclick="togglePass('cfg-github_token', this)"
+                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--pw-text-3);cursor:pointer;padding:4px;">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--pw-text-3);margin-top:5px;">
+            Needs <code>repo</code> scope. <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--pw-accent);">Create token ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-arrow-repeat"></i> Sync</div>
+      </div>
+      <div class="pw-card-body">
+        <div class="mb-3">
+          <label class="pw-toggle">
+            <input type="checkbox" id="cfg-auto_sync" <%= config('auto_sync') == 'true' ? 'checked' : '' %>>
+            <span class="pw-toggle-track"></span>
+            <span style="font-size:13px;color:var(--pw-text);">Auto-sync workspaces</span>
+          </label>
+          <div style="font-size:11px;color:var(--pw-text-3);margin-top:6px;margin-left:52px;">
+            Automatically push changes on a schedule
+          </div>
+        </div>
+        <div class="mb-3" id="sync-interval-group">
+          <label class="pw-label">Sync Interval (seconds)</label>
+          <input type="number" id="cfg-sync_interval" class="pw-input"
+                 value="<%= config('sync_interval') || 300 %>" min="60" max="86400">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Database Info -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-database"></i> Database</div>
+      </div>
+      <div class="pw-card-body">
+        <div style="display:grid;gap:10px;">
+          <% [
+            ['Path', DB_PATH],
+            ['Workspaces', DB[:workspaces].count.to_s],
+            ['Services',   DB[:services].count.to_s],
+            ['Sync Logs',  DB[:sync_log].count.to_s],
+            ['Config Keys', DB[:config].count.to_s],
+          ].each do |label, value| %>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--pw-border);">
+            <span style="color:var(--pw-text-2)"><%= label %></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--pw-text);max-width:55%;text-align:right;word-break:break-all;"><%= value %></span>
+          </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div class="col-md-6 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-info-circle"></i> About</div>
+      </div>
+      <div class="pw-card-body">
+        <div style="display:grid;gap:10px;">
+          <% [
+            ['Version',    '1.0.0'],
+            ['Ruby',       RUBY_VERSION],
+            ['Sinatra',    Sinatra::VERSION],
+            ['Sequel',     Sequel::VERSION],
+            ['SQLite',     SQLite3::VERSION rescue '?'],
+            ['Environment', settings.environment.to_s.capitalize],
+          ].each do |label, value| %>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--pw-border);">
+            <span style="color:var(--pw-text-2)"><%= label %></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;"><%= value %></span>
+          </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+<script>
+document.getElementById('page-title').textContent = 'Settings';
+
+let currentTheme = '<%= config("theme") || "light" %>';
+
+function setThemePref(theme, btn) {
+  currentTheme = theme;
+  document.querySelectorAll('.pw-theme-btn').forEach(b => {
+    b.className = 'btn pw-theme-btn btn-ghost';
+  });
+  btn.className = 'btn pw-theme-btn btn-pw';
+  document.documentElement.setAttribute('data-bs-theme', theme);
+  localStorage.setItem('pw-theme', theme);
+}
+
+function setAccent(hex) {
+  document.getElementById('cfg-accent_color').value = hex;
+  document.getElementById('cfg-accent_text').value = hex;
+  document.documentElement.style.setProperty('--pw-accent', hex);
+}
+
+document.getElementById('cfg-accent_color').addEventListener('input', e => {
+  document.getElementById('cfg-accent_text').value = e.target.value;
+  document.documentElement.style.setProperty('--pw-accent', e.target.value);
+});
+
+document.getElementById('cfg-accent_text').addEventListener('change', e => {
+  const v = e.target.value;
+  if (/^#[0-9a-f]{6}$/i.test(v)) {
+    document.getElementById('cfg-accent_color').value = v;
+    document.documentElement.style.setProperty('--pw-accent', v);
+  }
+});
+
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  btn.querySelector('i').className = isPass ? 'bi bi-eye-slash' : 'bi bi-eye';
+}
+
+async function saveAll(btn) {
+  const payload = {
+    app_name:       document.getElementById('cfg-app_name').value,
+    theme:          currentTheme,
+    accent_color:   document.getElementById('cfg-accent_color').value,
+    github_user:    document.getElementById('cfg-github_user').value,
+    github_token:   document.getElementById('cfg-github_token').value,
+    auto_sync:      document.getElementById('cfg-auto_sync').checked.toString(),
+    sync_interval:  document.getElementById('cfg-sync_interval').value,
+  };
+
+  await withSpinner(btn, 'Saving…', async () => {
+    const data = await apiCall('/settings', 'POST', payload);
+    if (data.success) {
+      showToast('Settings saved successfully', 'success');
+    } else {
+      showToast(data.error || 'Save failed', 'error');
+    }
+  });
+}
+</script>
+<% end %>

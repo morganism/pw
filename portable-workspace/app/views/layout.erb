@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= config('app_name') || 'PortableWork' %></title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── CSS Variables ─────────────────────────────────────────── */
+    :root {
+      --pw-accent:       #0071e3;
+      --pw-accent-dark:  #0077ed;
+      --pw-accent-soft:  rgba(0,113,227,0.10);
+      --pw-bg:           #f5f5f7;
+      --pw-surface:      #ffffff;
+      --pw-surface-2:    #fbfbfd;
+      --pw-border:       rgba(0,0,0,0.08);
+      --pw-text:         #1d1d1f;
+      --pw-text-2:       #6e6e73;
+      --pw-text-3:       #aeaeb2;
+      --pw-sidebar-w:    240px;
+      --pw-radius:       14px;
+      --pw-radius-sm:    8px;
+      --pw-shadow:       0 2px 20px rgba(0,0,0,0.07);
+      --pw-shadow-lg:    0 8px 40px rgba(0,0,0,0.12);
+      --pw-glass:        rgba(255,255,255,0.72);
+      --pw-blur:         blur(20px) saturate(180%);
+      --pw-transition:   0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --pw-spring:       0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    [data-bs-theme="dark"] {
+      --pw-bg:        #000000;
+      --pw-surface:   #1c1c1e;
+      --pw-surface-2: #2c2c2e;
+      --pw-border:    rgba(255,255,255,0.10);
+      --pw-text:      #f5f5f7;
+      --pw-text-2:    #98989d;
+      --pw-text-3:    #636366;
+      --pw-glass:     rgba(28,28,30,0.80);
+      --pw-shadow:    0 2px 20px rgba(0,0,0,0.40);
+      --pw-shadow-lg: 0 8px 40px rgba(0,0,0,0.60);
+    }
+
+    /* ── Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, 'Inter', BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--pw-bg);
+      color: var(--pw-text);
+      margin: 0;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    .pw-sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: var(--pw-sidebar-w);
+      background: var(--pw-glass);
+      backdrop-filter: var(--pw-blur);
+      -webkit-backdrop-filter: var(--pw-blur);
+      border-right: 1px solid var(--pw-border);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--pw-transition);
+    }
+
+    .pw-logo {
+      padding: 24px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--pw-border);
+    }
+
+    .pw-logo-icon {
+      width: 32px; height: 32px;
+      background: var(--pw-accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.35);
+    }
+
+    .pw-logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--pw-text);
+      letter-spacing: -0.3px;
+    }
+
+    .pw-logo-sub {
+      font-size: 11px;
+      color: var(--pw-text-2);
+      letter-spacing: 0.2px;
+    }
+
+    .pw-nav {
+      padding: 12px 10px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .pw-nav-section {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--pw-text-3);
+      padding: 12px 10px 6px;
+    }
+
+    .pw-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--pw-radius-sm);
+      color: var(--pw-text-2);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 450;
+      transition: all var(--pw-transition);
+      position: relative;
+      margin-bottom: 2px;
+    }
+
+    .pw-nav-item:hover {
+      color: var(--pw-text);
+      background: rgba(0,0,0,0.04);
+      transform: translateX(2px);
+    }
+
+    [data-bs-theme="dark"] .pw-nav-item:hover {
+      background: rgba(255,255,255,0.06);
+    }
+
+    .pw-nav-item.active {
+      color: var(--pw-accent);
+      background: var(--pw-accent-soft);
+      font-weight: 500;
+    }
+
+    .pw-nav-item i {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .pw-nav-badge {
+      margin-left: auto;
+      font-size: 10px;
+      background: var(--pw-accent);
+      color: white;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .pw-sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--pw-border);
+    }
+
+    .pw-status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .pw-status-dot.ok   { background: #34c759; box-shadow: 0 0 4px #34c759; }
+    .pw-status-dot.warn { background: #ff9f0a; }
+    .pw-status-dot.err  { background: #ff3b30; }
+
+    /* ── Main Content ───────────────────────────────────────────── */
+    .pw-main {
+      margin-left: var(--pw-sidebar-w);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Topbar ─────────────────────────────────────────────────── */
+    .pw-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      background: var(--pw-glass);
+      backdrop-filter: var(--pw-blur);
+      -webkit-backdrop-filter: var(--pw-blur);
+      border-bottom: 1px solid var(--pw-border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pw-page-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--pw-text);
+      letter-spacing: -0.3px;
+    }
+
+    .pw-topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Content Area ───────────────────────────────────────────── */
+    .pw-content {
+      padding: 28px;
+      flex: 1;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────────── */
+    .pw-card {
+      background: var(--pw-surface);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius);
+      box-shadow: var(--pw-shadow);
+      overflow: hidden;
+      transition: box-shadow var(--pw-transition), transform var(--pw-transition);
+    }
+
+    .pw-card:hover {
+      box-shadow: var(--pw-shadow-lg);
+      transform: translateY(-1px);
+    }
+
+    .pw-card-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--pw-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pw-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pw-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pw-card-title i {
+      color: var(--pw-accent);
+    }
+
+    .pw-card-body {
+      padding: 20px 22px;
+    }
+
+    /* ── Stat Tiles ─────────────────────────────────────────────── */
+    .pw-stat {
+      background: var(--pw-surface);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all var(--pw-transition);
+      cursor: default;
+    }
+
+    .pw-stat:hover {
+      border-color: var(--pw-accent);
+      box-shadow: 0 0 0 3px var(--pw-accent-soft);
+      transform: translateY(-2px);
+    }
+
+    .pw-stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--pw-text-3);
+    }
+
+    .pw-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--pw-text);
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .pw-stat-meta {
+      font-size: 12px;
+      color: var(--pw-text-2);
+    }
+
+    .pw-stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn {
+      border-radius: var(--pw-radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all var(--pw-transition);
+      letter-spacing: -0.1px;
+    }
+
+    .btn-pw {
+      background: var(--pw-accent);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+    }
+
+    .btn-pw:hover {
+      background: var(--pw-accent-dark);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,113,227,0.35);
+    }
+
+    .btn-pw:active { transform: translateY(0); }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--pw-border);
+      color: var(--pw-text-2);
+      padding: 7px 14px;
+    }
+
+    .btn-ghost:hover {
+      background: var(--pw-bg);
+      color: var(--pw-text);
+      border-color: rgba(0,0,0,0.16);
+    }
+
+    .btn-danger-soft {
+      background: rgba(255,59,48,0.10);
+      color: #ff3b30;
+      border: none;
+      padding: 7px 14px;
+    }
+
+    .btn-danger-soft:hover {
+      background: rgba(255,59,48,0.18);
+      color: #ff3b30;
+    }
+
+    .btn-success-soft {
+      background: rgba(52,199,89,0.10);
+      color: #34c759;
+      border: none;
+      padding: 7px 14px;
+    }
+
+    .btn-success-soft:hover {
+      background: rgba(52,199,89,0.18);
+      color: #34c759;
+    }
+
+    /* ── Tables ─────────────────────────────────────────────────── */
+    .pw-table {
+      width: 100%;
+      font-size: 13px;
+      border-collapse: collapse;
+    }
+
+    .pw-table th {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--pw-text-3);
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--pw-border);
+      text-align: left;
+    }
+
+    .pw-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--pw-border);
+      color: var(--pw-text);
+      vertical-align: middle;
+    }
+
+    .pw-table tr:last-child td { border-bottom: none; }
+
+    .pw-table tr:hover td { background: var(--pw-bg); }
+
+    /* ── Badges ─────────────────────────────────────────────────── */
+    .pw-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.2px;
+    }
+
+    .pw-badge-green  { background: rgba(52,199,89,0.12);  color: #1a7f37; }
+    .pw-badge-red    { background: rgba(255,59,48,0.12);  color: #c0392b; }
+    .pw-badge-yellow { background: rgba(255,159,10,0.12); color: #9a6700; }
+    .pw-badge-blue   { background: rgba(0,113,227,0.12);  color: #0071e3; }
+    .pw-badge-gray   { background: rgba(110,110,115,0.12); color: var(--pw-text-2); }
+
+    [data-bs-theme="dark"] .pw-badge-green  { color: #30d158; }
+    [data-bs-theme="dark"] .pw-badge-red    { color: #ff453a; }
+    [data-bs-theme="dark"] .pw-badge-yellow { color: #ffd60a; }
+    [data-bs-theme="dark"] .pw-badge-blue   { color: #409cff; }
+
+    /* ── Form Controls ──────────────────────────────────────────── */
+    .pw-input {
+      background: var(--pw-bg);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius-sm);
+      color: var(--pw-text);
+      font-size: 13.5px;
+      padding: 9px 13px;
+      width: 100%;
+      transition: all var(--pw-transition);
+      outline: none;
+    }
+
+    .pw-input:focus {
+      border-color: var(--pw-accent);
+      box-shadow: 0 0 0 3px var(--pw-accent-soft);
+      background: var(--pw-surface);
+    }
+
+    .pw-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--pw-text-2);
+      margin-bottom: 5px;
+      display: block;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Toggle Switch ──────────────────────────────────────────── */
+    .pw-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .pw-toggle input { display: none; }
+
+    .pw-toggle-track {
+      width: 42px; height: 24px;
+      background: var(--pw-border);
+      border-radius: 12px;
+      transition: background var(--pw-transition);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pw-toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: transform var(--pw-spring);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+
+    .pw-toggle input:checked + .pw-toggle-track {
+      background: var(--pw-accent);
+    }
+
+    .pw-toggle input:checked + .pw-toggle-track::after {
+      transform: translateX(18px);
+    }
+
+    /* ── Timeline / Log ─────────────────────────────────────────── */
+    .pw-timeline { padding: 0; list-style: none; position: relative; }
+
+    .pw-timeline::before {
+      content: '';
+      position: absolute;
+      left: 16px; top: 8px; bottom: 8px;
+      width: 1px;
+      background: var(--pw-border);
+    }
+
+    .pw-tl-item {
+      display: flex;
+      gap: 14px;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .pw-tl-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--pw-surface);
+      flex-shrink: 0;
+      margin-top: 4px;
+      position: relative;
+      z-index: 1;
+      margin-left: 11px;
+    }
+
+    .pw-tl-dot.success { background: #34c759; }
+    .pw-tl-dot.error   { background: #ff3b30; }
+    .pw-tl-dot.pending { background: #ff9f0a; }
+
+    .pw-tl-body { font-size: 12.5px; }
+    .pw-tl-action { font-weight: 600; color: var(--pw-text); }
+    .pw-tl-meta   { color: var(--pw-text-3); font-size: 11px; margin-top: 1px; }
+    .pw-tl-msg    { color: var(--pw-text-2); margin-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 11px; word-break: break-all; }
+
+    /* ── Modal ──────────────────────────────────────────────────── */
+    .modal-content {
+      background: var(--pw-surface);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius);
+      box-shadow: var(--pw-shadow-lg);
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--pw-border);
+      padding: 18px 22px;
+    }
+
+    .modal-title { font-size: 15px; font-weight: 600; }
+    .modal-body  { padding: 22px; }
+    .modal-footer { border-top: 1px solid var(--pw-border); padding: 14px 22px; }
+
+    /* ── Code / Mono ────────────────────────────────────────────── */
+    .pw-mono {
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
+      font-size: 12px;
+      background: var(--pw-bg);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius-sm);
+      padding: 12px 14px;
+      color: var(--pw-text);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── Animations ─────────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(52,199,89,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(52,199,89,0); }
+      100% { box-shadow: 0 0 0 0 rgba(52,199,89,0); }
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .pw-fade-in {
+      animation: fadeInUp 0.35s var(--pw-transition) both;
+    }
+
+    .pw-fade-in:nth-child(1) { animation-delay: 0.00s; }
+    .pw-fade-in:nth-child(2) { animation-delay: 0.05s; }
+    .pw-fade-in:nth-child(3) { animation-delay: 0.10s; }
+    .pw-fade-in:nth-child(4) { animation-delay: 0.15s; }
+    .pw-fade-in:nth-child(5) { animation-delay: 0.20s; }
+
+    .pw-pulse { animation: pulse-ring 2s infinite; }
+
+    /* ── Toast ──────────────────────────────────────────────────── */
+    #pw-toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .pw-toast {
+      background: var(--pw-surface);
+      border: 1px solid var(--pw-border);
+      border-radius: var(--pw-radius);
+      box-shadow: var(--pw-shadow-lg);
+      padding: 12px 18px;
+      min-width: 260px;
+      max-width: 340px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      pointer-events: all;
+      animation: fadeInUp 0.3s var(--pw-transition) both;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .pw-toast.hiding {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    .pw-toast-icon { font-size: 17px; flex-shrink: 0; }
+    .pw-toast-text { flex: 1; color: var(--pw-text); }
+    .pw-toast.success .pw-toast-icon { color: #34c759; }
+    .pw-toast.error   .pw-toast-icon { color: #ff3b30; }
+    .pw-toast.info    .pw-toast-icon { color: var(--pw-accent); }
+
+    /* ── Loading Spinner ────────────────────────────────────────── */
+    .pw-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--pw-border);
+      border-top-color: var(--pw-accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Scrollbar ──────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--pw-border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--pw-text-3); }
+
+    /* ── Divider ────────────────────────────────────────────────── */
+    .pw-divider {
+      height: 1px;
+      background: var(--pw-border);
+      margin: 16px 0;
+    }
+
+    /* ── Empty State ────────────────────────────────────────────── */
+    .pw-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--pw-text-3);
+    }
+
+    .pw-empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+    .pw-empty p { font-size: 13px; margin: 0; }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .pw-sidebar { transform: translateX(-100%); }
+      .pw-sidebar.open { transform: translateX(0); }
+      .pw-main { margin-left: 0; }
+      .pw-content { padding: 18px; }
+    }
+  </style>
+
+  <%= yield_content :head %>
+</head>
+<body>
+
+<!-- ── Sidebar ────────────────────────────────────────────────────────────── -->
+<nav class="pw-sidebar" id="sidebar">
+  <div class="pw-logo">
+    <div class="pw-logo-icon"><i class="bi bi-box-fill"></i></div>
+    <div>
+      <div class="pw-logo-text"><%= config('app_name') || 'PortableWork' %></div>
+      <div class="pw-logo-sub">Portable Workspace</div>
+    </div>
+  </div>
+
+  <div class="pw-nav">
+    <div class="pw-nav-section">Workspace</div>
+
+    <a href="/" class="pw-nav-item <%= request.path == '/' ? 'active' : '' %>">
+      <i class="bi bi-grid-fill"></i> Dashboard
+    </a>
+    <a href="/workspaces" class="pw-nav-item <%= request.path == '/workspaces' ? 'active' : '' %>">
+      <i class="bi bi-folder2-open"></i> Workspaces
+      <% count = DB[:workspaces].count; %>
+      <% if count > 0 %><span class="pw-nav-badge"><%= count %></span><% end %>
+    </a>
+    <a href="/services" class="pw-nav-item <%= request.path == '/services' ? 'active' : '' %>">
+      <i class="bi bi-boxes"></i> Services
+    </a>
+
+    <div class="pw-nav-section">System</div>
+
+    <a href="/settings" class="pw-nav-item <%= request.path == '/settings' ? 'active' : '' %>">
+      <i class="bi bi-gear-fill"></i> Settings
+    </a>
+    <a href="/api/status" target="_blank" class="pw-nav-item">
+      <i class="bi bi-activity"></i> API Status
+    </a>
+  </div>
+
+  <div class="pw-sidebar-footer">
+    <div style="font-size:11px; color:var(--pw-text-3); padding:0 2px;">
+      <% docker_ok = docker_running? rescue false %>
+      <% git_ok    = git_available? rescue false %>
+      <div style="margin-bottom:4px;">
+        <span class="pw-status-dot <%= docker_ok ? 'ok' : 'err' %>"></span>
+        Docker <%= docker_ok ? 'Running' : 'Offline' %>
+      </div>
+      <div>
+        <span class="pw-status-dot <%= git_ok ? 'ok' : 'err' %>"></span>
+        Git <%= git_ok ? 'Available' : 'Missing' %>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="pw-main">
+  <!-- Topbar -->
+  <div class="pw-topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn-ghost btn d-md-none" id="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')" style="padding:6px 10px;">
+        <i class="bi bi-list" style="font-size:18px;"></i>
+      </button>
+      <div class="pw-page-title" id="page-title"><%= @page_title || 'Dashboard' %></div>
+    </div>
+    <div class="pw-topbar-actions">
+      <button class="btn btn-ghost" onclick="toggleTheme()" title="Toggle theme" style="padding:7px 10px;">
+        <i class="bi bi-circle-half" style="font-size:15px;"></i>
+      </button>
+      <div id="status-pill" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--pw-text-2);background:var(--pw-bg);border:1px solid var(--pw-border);border-radius:20px;padding:5px 12px;">
+        <span class="pw-status-dot ok pw-pulse"></span>
+        <span>Live</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page Content -->
+  <div class="pw-content">
+    <%= yield %>
+  </div>
+</div>
+
+<!-- ── Toast Container ─────────────────────────────────────────────────────── -->
+<div id="pw-toast-container"></div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ── Theme ───────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-bs-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-bs-theme', next);
+  localStorage.setItem('pw-theme', next);
+  // Persist to server
+  fetch('/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ theme: next })
+  });
+}
+
+// Restore theme
+(function() {
+  const saved = localStorage.getItem('pw-theme') || '<%= config("theme") || "light" %>';
+  document.documentElement.setAttribute('data-bs-theme', saved);
+})();
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const icons = { success: 'bi-check-circle-fill', error: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill' };
+  const container = document.getElementById('pw-toast-container');
+  const toast = document.createElement('div');
+  toast.className = `pw-toast ${type}`;
+  toast.innerHTML = `<i class="bi ${icons[type]} pw-toast-icon"></i><span class="pw-toast-text">${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
+
+// ── API Helpers ─────────────────────────────────────────────────────────────
+async function apiCall(url, method = 'POST', body = null) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ── Confirm dialog ──────────────────────────────────────────────────────────
+function pwConfirm(msg, cb) {
+  if (window.confirm(msg)) cb();
+}
+
+// ── Spinner ─────────────────────────────────────────────────────────────────
+function withSpinner(btn, label, fn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="pw-spinner"></span> ${label}`;
+  return fn().finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  });
+}
+</script>
+
+<%= yield_content :scripts %>
+</body>
+</html>

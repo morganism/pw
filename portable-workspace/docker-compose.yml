@@ -1,0 +1,84 @@
+version: '3.9'
+
+# PortableWork — Docker Compose Portable Workspace
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose down           # Stop all services
+#   docker compose logs -f app    # Stream app logs
+#   docker compose exec app bash  # Shell into app container
+
+services:
+
+  # ── PortableWork App ────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portablework_app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4567}:4567"
+    volumes:
+      # Persist SQLite DB across container rebuilds
+      - pw_db:/app/db
+      # Mount TLS certs (generated on first run)
+      - pw_ssl:/app/config/ssl
+      # Mount host Docker socket for service management
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      RACK_ENV: ${RACK_ENV:-production}
+      PORT: 4567
+      DATABASE_PATH: /app/db/workspace.db
+      SESSION_SECRET: ${SESSION_SECRET:-changeme_use_a_long_random_string_in_production}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_USER:  ${GITHUB_USER:-}
+    healthcheck:
+      test: ["CMD", "curl", "-kf", "https://localhost:4567/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "com.portablework.role=app"
+      - "com.portablework.version=1.0.0"
+    networks:
+      - pw_net
+
+  # ── Traefik Reverse Proxy (optional, enable for HTTPS with real certs) ──
+  # Uncomment to use Traefik for automatic Let's Encrypt TLS
+  # traefik:
+  #   image: traefik:v3
+  #   container_name: portablework_traefik
+  #   command:
+  #     - "--providers.docker=true"
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  #     - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+  #     - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - pw_letsencrypt:/letsencrypt
+  #   networks:
+  #     - pw_net
+
+# ── Volumes ──────────────────────────────────────────────────────
+volumes:
+  pw_db:
+    name: portablework_db
+    driver: local
+  pw_ssl:
+    name: portablework_ssl
+    driver: local
+  # pw_letsencrypt:
+  #   name: portablework_letsencrypt
+
+# ── Networks ─────────────────────────────────────────────────────
+networks:
+  pw_net:
+    name: portablework_net
+    driver: bridge

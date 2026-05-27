@@ -1,0 +1,26 @@
+# Secrets
+.env
+config/ssl/
+
+# Database (synced via .workspace/ snapshot on push)
+db/*.db
+db/*.db-shm
+db/*.db-wal
+
+# Ruby
+vendor/
+.bundle/
+*.gem
+Gemfile.lock
+
+# Logs / tmp
+log/
+tmp/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/

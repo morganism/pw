@@ -1,0 +1,214 @@
+<!-- Workspaces Page -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 style="font-weight:600;letter-spacing:-0.3px;margin:0;">Workspaces</h5>
+    <p style="font-size:12.5px;color:var(--pw-text-2);margin:2px 0 0;">Manage your portable development environments</p>
+  </div>
+  <button class="btn btn-pw" data-bs-toggle="modal" data-bs-target="#wsModal" onclick="openCreate()">
+    <i class="bi bi-plus-lg"></i> New Workspace
+  </button>
+</div>
+
+<% if @workspaces.empty? %>
+  <div class="pw-card">
+    <div class="pw-empty" style="padding:72px;">
+      <i class="bi bi-folder-plus"></i>
+      <p style="font-size:15px;margin-top:8px;color:var(--pw-text-2);">No workspaces yet</p>
+      <p style="font-size:13px;margin-top:4px;">Create a workspace to connect it to a GitHub repo and start syncing.</p>
+      <button class="btn btn-pw mt-3" data-bs-toggle="modal" data-bs-target="#wsModal" onclick="openCreate()">
+        Create First Workspace
+      </button>
+    </div>
+  </div>
+<% else %>
+  <div class="row g-3" id="ws-grid">
+    <% @workspaces.each do |ws| %>
+    <div class="col-md-6 col-lg-4 pw-fade-in" id="ws-card-<%= ws[:id] %>">
+      <div class="pw-card" style="height:100%;">
+        <div class="pw-card-header">
+          <div class="pw-card-title">
+            <i class="bi bi-folder2-open"></i>
+            <%= ws[:name] %>
+          </div>
+          <span class="pw-badge <%= ws[:status] == 'active' ? 'pw-badge-green' : 'pw-badge-gray' %>">
+            <%= ws[:status] %>
+          </span>
+        </div>
+        <div class="pw-card-body">
+          <p style="font-size:13px;color:var(--pw-text-2);min-height:36px;margin-bottom:14px;">
+            <%= ws[:description] || 'No description' %>
+          </p>
+
+          <% if ws[:github_repo].to_s.length > 0 %>
+          <div style="background:var(--pw-bg);border:1px solid var(--pw-border);border-radius:var(--pw-radius-sm);padding:10px 12px;margin-bottom:12px;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--pw-text-3);margin-bottom:4px;">Repository</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--pw-text);word-break:break-all;">
+              <i class="bi bi-github" style="margin-right:4px;"></i><%= ws[:github_repo] %>
+            </div>
+            <div style="font-size:11px;color:var(--pw-text-3);margin-top:3px;">
+              Branch: <strong><%= ws[:github_branch] || 'main' %></strong>
+            </div>
+          </div>
+          <% end %>
+
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--pw-text-3);margin-bottom:14px;">
+            <span>Last sync: <%= format_time(ws[:last_synced]) %></span>
+            <span>Created: <%= format_time(ws[:created_at]) %></span>
+          </div>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-pw" style="flex:1;font-size:12px;padding:7px 10px;"
+                    onclick="syncPush(<%= ws[:id] %>, this)">
+              <i class="bi bi-cloud-upload-fill"></i> Push
+            </button>
+            <button class="btn btn-ghost" style="flex:1;font-size:12px;padding:7px 10px;"
+                    onclick="syncPull(<%= ws[:id] %>, this)">
+              <i class="bi bi-cloud-download"></i> Pull
+            </button>
+            <a href="/compose/<%= ws[:id] %>" class="btn btn-ghost" style="font-size:12px;padding:7px 10px;" title="Download docker-compose.yml">
+              <i class="bi bi-download"></i>
+            </a>
+            <button class="btn btn-ghost" style="font-size:12px;padding:7px 10px;"
+                    onclick="openEdit(<%= ws.to_json.gsub("'", "\\'") %>)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-danger-soft" style="font-size:12px;padding:7px 10px;"
+                    onclick="deleteWs(<%= ws[:id] %>, '<%= ws[:name].gsub("'", "\\'") %>')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% end %>
+  </div>
+<% end %>
+
+<!-- Workspace Modal -->
+<div class="modal fade" id="wsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="wsModalTitle">New Workspace</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ws-id">
+        <div class="mb-3">
+          <label class="pw-label">Workspace Name *</label>
+          <input type="text" id="ws-name" class="pw-input" placeholder="e.g. My Dev Environment">
+        </div>
+        <div class="mb-3">
+          <label class="pw-label">Description</label>
+          <input type="text" id="ws-desc" class="pw-input" placeholder="Optional description">
+        </div>
+        <div class="mb-3">
+          <label class="pw-label">GitHub Repository URL</label>
+          <input type="text" id="ws-repo" class="pw-input" placeholder="https://github.com/user/repo">
+        </div>
+        <div class="mb-3">
+          <label class="pw-label">Branch</label>
+          <input type="text" id="ws-branch" class="pw-input" value="main" placeholder="main">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-pw" id="ws-save-btn" onclick="saveWorkspace(this)">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+<script>
+document.getElementById('page-title').textContent = 'Workspaces';
+let wsModal;
+document.addEventListener('DOMContentLoaded', () => {
+  wsModal = new bootstrap.Modal(document.getElementById('wsModal'));
+});
+
+function openCreate() {
+  document.getElementById('ws-id').value = '';
+  document.getElementById('ws-name').value = '';
+  document.getElementById('ws-desc').value = '';
+  document.getElementById('ws-repo').value = '';
+  document.getElementById('ws-branch').value = 'main';
+  document.getElementById('wsModalTitle').textContent = 'New Workspace';
+}
+
+function openEdit(ws) {
+  const d = typeof ws === 'string' ? JSON.parse(ws) : ws;
+  document.getElementById('ws-id').value = d.id;
+  document.getElementById('ws-name').value = d.name;
+  document.getElementById('ws-desc').value = d.description || '';
+  document.getElementById('ws-repo').value = d.github_repo || '';
+  document.getElementById('ws-branch').value = d.github_branch || 'main';
+  document.getElementById('wsModalTitle').textContent = 'Edit Workspace';
+  wsModal.show();
+}
+
+async function saveWorkspace(btn) {
+  const id     = document.getElementById('ws-id').value;
+  const name   = document.getElementById('ws-name').value.trim();
+  if (!name) { showToast('Name is required', 'error'); return; }
+
+  const body = {
+    name,
+    description:   document.getElementById('ws-desc').value,
+    github_repo:   document.getElementById('ws-repo').value,
+    github_branch: document.getElementById('ws-branch').value || 'main',
+  };
+
+  await withSpinner(btn, 'Saving…', async () => {
+    const url    = id ? `/workspaces/${id}` : '/workspaces';
+    const method = id ? 'PUT' : 'POST';
+    const data   = await apiCall(url, method, body);
+    if (data.success) {
+      showToast(id ? 'Workspace updated' : 'Workspace created', 'success');
+      wsModal.hide();
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(data.error || 'Error saving', 'error');
+    }
+  });
+}
+
+async function deleteWs(id, name) {
+  if (!confirm(`Delete workspace "${name}"? This cannot be undone.`)) return;
+  const data = await apiCall(`/workspaces/${id}`, 'DELETE');
+  if (data.success) {
+    document.getElementById(`ws-card-${id}`)?.remove();
+    showToast('Workspace deleted', 'info');
+  } else {
+    showToast(data.error || 'Delete failed', 'error');
+  }
+}
+
+async function syncPush(wsId, btn) {
+  const msg = prompt('Commit message:', 'chore: sync workspace state');
+  if (msg === null) return;
+  await withSpinner(btn, 'Pushing…', async () => {
+    const data = await apiCall(`/sync/push/${wsId}`, 'POST', { message: msg });
+    if (data.success) {
+      showToast(`Pushed${data.sha ? ' (' + data.sha + ')' : ''}`, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast(data.error || 'Push failed', 'error');
+    }
+  });
+}
+
+async function syncPull(wsId, btn) {
+  if (!confirm('Pull latest from GitHub? This may overwrite local state.')) return;
+  await withSpinner(btn, 'Pulling…', async () => {
+    const data = await apiCall(`/sync/pull/${wsId}`, 'POST');
+    if (data.success) {
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast(data.error || 'Pull failed', 'error');
+    }
+  });
+}
+</script>
+<% end %>

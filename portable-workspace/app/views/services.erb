@@ -1,0 +1,276 @@
+<!-- Services Page -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 style="font-weight:600;letter-spacing:-0.3px;margin:0;">Services</h5>
+    <p style="font-size:12.5px;color:var(--pw-text-2);margin:2px 0 0;">Docker services in your portable workspace</p>
+  </div>
+  <button class="btn btn-pw" data-bs-toggle="modal" data-bs-target="#svcModal" onclick="openCreateSvc()">
+    <i class="bi bi-plus-lg"></i> Add Service
+  </button>
+</div>
+
+<% if @services.empty? %>
+  <div class="pw-card">
+    <div class="pw-empty" style="padding:72px;">
+      <i class="bi bi-boxes"></i>
+      <p style="font-size:15px;margin-top:8px;color:var(--pw-text-2);">No services configured</p>
+      <p style="font-size:13px;">Add Docker services to your workspace environments.</p>
+      <button class="btn btn-pw mt-3" data-bs-toggle="modal" data-bs-target="#svcModal" onclick="openCreateSvc()">
+        Add First Service
+      </button>
+    </div>
+  </div>
+<% else %>
+  <div class="pw-card pw-fade-in">
+    <table class="pw-table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Image</th>
+          <th>Ports</th>
+          <th>Workspace</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @services.each do |svc| %>
+        <% ws = @workspaces.find { |w| w[:id] == svc[:workspace_id] } %>
+        <% ports = JSON.parse(svc[:ports].to_s) rescue [] %>
+        <tr id="svc-row-<%= svc[:id] %>">
+          <td>
+            <div style="font-weight:500;"><%= svc[:name] %></div>
+          </td>
+          <td>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--pw-text-2);">
+              <%= svc[:image] %>:<%= svc[:tag] %>
+            </span>
+          </td>
+          <td>
+            <% if ports.any? %>
+              <% ports.each do |p| %>
+                <span class="pw-badge pw-badge-blue" style="margin-right:3px;"><%= p %></span>
+              <% end %>
+            <% else %>
+              <span style="color:var(--pw-text-3);font-size:12px;">—</span>
+            <% end %>
+          </td>
+          <td style="font-size:12px;color:var(--pw-text-2);">
+            <%= ws ? ws[:name] : '—' %>
+          </td>
+          <td>
+            <span class="pw-badge <%= svc[:status] == 'running' ? 'pw-badge-green' : 'pw-badge-gray' %>" id="svc-status-<%= svc[:id] %>">
+              <%= svc[:status] == 'running' ? '● Running' : '○ Stopped' %>
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:5px;">
+              <% if svc[:status] == 'running' %>
+                <button class="btn btn-danger-soft" style="font-size:12px;padding:4px 10px;" onclick="stopService(<%= svc[:id] %>, this)">
+                  <i class="bi bi-stop-fill"></i> Stop
+                </button>
+              <% else %>
+                <button class="btn btn-success-soft" style="font-size:12px;padding:4px 10px;" onclick="startService(<%= svc[:id] %>, this)">
+                  <i class="bi bi-play-fill"></i> Start
+                </button>
+              <% end %>
+              <button class="btn btn-danger-soft" style="font-size:12px;padding:4px 10px;" onclick="deleteSvc(<%= svc[:id] %>)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<!-- Compose Download Section -->
+<% unless @workspaces.empty? %>
+<div class="pw-card mt-4 pw-fade-in">
+  <div class="pw-card-header">
+    <div class="pw-card-title"><i class="bi bi-file-earmark-code"></i> Generate docker-compose.yml</div>
+  </div>
+  <div class="pw-card-body">
+    <p style="font-size:13px;color:var(--pw-text-2);margin-bottom:14px;">
+      Download a portable <code>docker-compose.yml</code> file for any workspace with its configured services.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <% @workspaces.each do |ws| %>
+        <a href="/compose/<%= ws[:id] %>" class="btn btn-ghost">
+          <i class="bi bi-download"></i> <%= ws[:name] %>
+        </a>
+      <% end %>
+    </div>
+  </div>
+</div>
+<% end %>
+
+<!-- Add Service Modal -->
+<div class="modal fade" id="svcModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Service</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="pw-label">Service Name *</label>
+            <input type="text" id="svc-name" class="pw-input" placeholder="e.g. postgres">
+          </div>
+          <div class="col-md-3">
+            <label class="pw-label">Docker Image *</label>
+            <input type="text" id="svc-image" class="pw-input" placeholder="postgres">
+          </div>
+          <div class="col-md-3">
+            <label class="pw-label">Tag</label>
+            <input type="text" id="svc-tag" class="pw-input" value="latest">
+          </div>
+          <div class="col-md-6">
+            <label class="pw-label">Workspace</label>
+            <select id="svc-workspace" class="pw-input">
+              <option value="">— None —</option>
+              <% @workspaces.each do |ws| %>
+                <option value="<%= ws[:id] %>"><%= ws[:name] %></option>
+              <% end %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="pw-label">Port Mappings <small style="font-weight:400;">(one per line, e.g. 5432:5432)</small></label>
+            <textarea id="svc-ports" class="pw-input" rows="2" placeholder="5432:5432&#10;8080:80"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="pw-label">Environment Variables <small style="font-weight:400;">(KEY=value, one per line)</small></label>
+            <textarea id="svc-env" class="pw-input" rows="3" placeholder="POSTGRES_PASSWORD=secret&#10;POSTGRES_DB=mydb"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="pw-label">Volumes <small style="font-weight:400;">(one per line)</small></label>
+            <textarea id="svc-volumes" class="pw-input" rows="3" placeholder="./data:/var/lib/postgresql/data"></textarea>
+          </div>
+        </div>
+
+        <div class="pw-divider"></div>
+
+        <!-- Quick Templates -->
+        <div style="font-size:12px;color:var(--pw-text-3);margin-bottom:8px;">Quick templates:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="applyTemplate('postgres')">
+            PostgreSQL
+          </button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="applyTemplate('redis')">
+            Redis
+          </button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="applyTemplate('mysql')">
+            MySQL
+          </button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="applyTemplate('nginx')">
+            Nginx
+          </button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="applyTemplate('mongo')">
+            MongoDB
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-pw" onclick="saveService(this)">Add Service</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+<script>
+document.getElementById('page-title').textContent = 'Services';
+
+const TEMPLATES = {
+  postgres: { name:'postgres', image:'postgres', tag:'16', ports:'5432:5432', env:'POSTGRES_PASSWORD=secret\nPOSTGRES_DB=app', volumes:'./pgdata:/var/lib/postgresql/data' },
+  redis:    { name:'redis',    image:'redis',    tag:'7-alpine', ports:'6379:6379', env:'', volumes:'./redisdata:/data' },
+  mysql:    { name:'mysql',    image:'mysql',    tag:'8', ports:'3306:3306', env:'MYSQL_ROOT_PASSWORD=secret\nMYSQL_DATABASE=app', volumes:'./mysqldata:/var/lib/mysql' },
+  nginx:    { name:'nginx',    image:'nginx',    tag:'alpine', ports:'80:80\n443:443', env:'', volumes:'./nginx.conf:/etc/nginx/nginx.conf:ro' },
+  mongo:    { name:'mongo',    image:'mongo',    tag:'7', ports:'27017:27017', env:'MONGO_INITDB_ROOT_USERNAME=root\nMONGO_INITDB_ROOT_PASSWORD=secret', volumes:'./mongodata:/data/db' },
+};
+
+function applyTemplate(key) {
+  const t = TEMPLATES[key];
+  document.getElementById('svc-name').value = t.name;
+  document.getElementById('svc-image').value = t.image;
+  document.getElementById('svc-tag').value = t.tag;
+  document.getElementById('svc-ports').value = t.ports;
+  document.getElementById('svc-env').value = t.env;
+  document.getElementById('svc-volumes').value = t.volumes;
+}
+
+function openCreateSvc() {
+  ['svc-name','svc-image','svc-ports','svc-env','svc-volumes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('svc-tag').value = 'latest';
+}
+
+async function saveService(btn) {
+  const name  = document.getElementById('svc-name').value.trim();
+  const image = document.getElementById('svc-image').value.trim();
+  if (!name || !image) { showToast('Name and image are required', 'error'); return; }
+
+  const ports   = document.getElementById('svc-ports').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const envRaw  = document.getElementById('svc-env').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const volRaw  = document.getElementById('svc-volumes').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const envObj  = {};
+  envRaw.forEach(e => { const [k,...v] = e.split('='); envObj[k] = v.join('='); });
+
+  await withSpinner(btn, 'Adding…', async () => {
+    const data = await apiCall('/services', 'POST', {
+      name, image, tag: document.getElementById('svc-tag').value || 'latest',
+      workspace_id: document.getElementById('svc-workspace').value || null,
+      ports, env_vars: envObj, volumes: volRaw
+    });
+    if (data.success) {
+      showToast('Service added', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('svcModal'))?.hide();
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(data.error || 'Error', 'error');
+    }
+  });
+}
+
+async function startService(id, btn) {
+  await withSpinner(btn, 'Starting…', async () => {
+    const data = await apiCall(`/services/${id}/start`, 'POST');
+    if (data.success) {
+      document.getElementById(`svc-status-${id}`).textContent = '● Running';
+      document.getElementById(`svc-status-${id}`).className = 'pw-badge pw-badge-green';
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showToast(data.error || 'Start failed', 'error');
+    }
+  });
+}
+
+async function stopService(id, btn) {
+  await withSpinner(btn, 'Stopping…', async () => {
+    const data = await apiCall(`/services/${id}/stop`, 'POST');
+    if (data.success) {
+      showToast(data.message, 'info');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(data.error || 'Stop failed', 'error');
+    }
+  });
+}
+
+async function deleteSvc(id) {
+  if (!confirm('Remove this service?')) return;
+  const data = await apiCall(`/services/${id}`, 'DELETE');
+  if (data.success) {
+    document.getElementById(`svc-row-${id}`)?.remove();
+    showToast('Service removed', 'info');
+  }
+}
+</script>
+<% end %>

@@ -1,0 +1,209 @@
+<% content_for :head do %>
+<% end %>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3 pw-fade-in">
+    <div class="pw-stat">
+      <div class="pw-stat-icon" style="background:rgba(0,113,227,0.10);color:#0071e3;">
+        <i class="bi bi-folder2-open"></i>
+      </div>
+      <div class="pw-stat-label">Workspaces</div>
+      <div class="pw-stat-value"><%= DB[:workspaces].count %></div>
+      <div class="pw-stat-meta"><%= DB[:workspaces].where(status: 'active').count %> active</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 pw-fade-in">
+    <div class="pw-stat">
+      <div class="pw-stat-icon" style="background:rgba(52,199,89,0.10);color:#34c759;">
+        <i class="bi bi-boxes"></i>
+      </div>
+      <div class="pw-stat-label">Services</div>
+      <div class="pw-stat-value"><%= DB[:services].count %></div>
+      <div class="pw-stat-meta"><%= DB[:services].where(status: 'running').count %> running</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 pw-fade-in">
+    <div class="pw-stat">
+      <div class="pw-stat-icon" style="background:rgba(255,159,10,0.10);color:#ff9f0a;">
+        <i class="bi bi-arrow-repeat"></i>
+      </div>
+      <div class="pw-stat-label">Syncs</div>
+      <div class="pw-stat-value"><%= DB[:sync_log].count %></div>
+      <div class="pw-stat-meta"><%= DB[:sync_log].where(status: 'success').count %> successful</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 pw-fade-in">
+    <div class="pw-stat">
+      <div class="pw-stat-icon" style="background:<%= @docker_ok ? 'rgba(52,199,89,0.10)' : 'rgba(255,59,48,0.10)' %>;color:<%= @docker_ok ? '#34c759' : '#ff3b30' %>;">
+        <i class="bi bi-<%= @docker_ok ? 'check-circle-fill' : 'exclamation-circle-fill' %>"></i>
+      </div>
+      <div class="pw-stat-label">Docker</div>
+      <div class="pw-stat-value" style="font-size:18px;margin-top:4px;"><%= @docker_ok ? 'Online' : 'Offline' %></div>
+      <div class="pw-stat-meta">Git: <%= @git_ok ? 'Available' : 'Missing' %></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Workspaces Panel -->
+  <div class="col-md-7 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-folder2-open"></i> Workspaces</div>
+        <a href="/workspaces" class="btn btn-ghost" style="font-size:12px;padding:5px 12px;">Manage <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <% if @workspaces.empty? %>
+        <div class="pw-empty">
+          <i class="bi bi-folder-plus"></i>
+          <p>No workspaces yet.<br><a href="/workspaces">Create your first workspace</a></p>
+        </div>
+      <% else %>
+        <table class="pw-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Repo</th>
+              <th>Last Sync</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @workspaces.each do |ws| %>
+            <tr id="ws-row-<%= ws[:id] %>">
+              <td>
+                <div style="font-weight:500;"><%= ws[:name] %></div>
+                <div style="font-size:11px;color:var(--pw-text-3);"><%= ws[:description] %></div>
+              </td>
+              <td>
+                <% if ws[:github_repo].to_s.length > 0 %>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--pw-text-2);">
+                    <%= ws[:github_repo].to_s.split('/').last(2).join('/') %>
+                  </span>
+                <% else %>
+                  <span style="color:var(--pw-text-3);font-size:12px;">—</span>
+                <% end %>
+              </td>
+              <td style="font-size:12px;color:var(--pw-text-2);">
+                <%= format_time(ws[:last_synced]) %>
+              </td>
+              <td>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-success-soft" style="padding:4px 10px;font-size:12px;"
+                          onclick="syncPush(<%= ws[:id] %>, this)">
+                    <i class="bi bi-cloud-upload"></i>
+                  </button>
+                  <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;"
+                          onclick="syncPull(<%= ws[:id] %>, this)">
+                    <i class="bi bi-cloud-download"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Sync Log -->
+  <div class="col-md-5 pw-fade-in">
+    <div class="pw-card" style="height:100%;">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-clock-history"></i> Sync Log</div>
+        <span style="font-size:11px;color:var(--pw-text-3);">Last <%= [@sync_log.length, 10].min %></span>
+      </div>
+      <div class="pw-card-body" style="padding:14px 18px;">
+        <% if @sync_log.empty? %>
+          <div class="pw-empty" style="padding:24px;">
+            <i class="bi bi-clock" style="font-size:28px;"></i>
+            <p style="margin-top:8px;">No sync history yet</p>
+          </div>
+        <% else %>
+          <ul class="pw-timeline" id="sync-log-list">
+            <% @sync_log.each do |entry| %>
+            <li class="pw-tl-item">
+              <span class="pw-tl-dot <%= entry[:status] == 'success' ? 'success' : 'error' %>"></span>
+              <div class="pw-tl-body">
+                <div class="pw-tl-action"><%= entry[:action].upcase %></div>
+                <div class="pw-tl-meta"><%= format_time(entry[:created_at]) %> &bull; WS #<%= entry[:workspace_id] %></div>
+                <div class="pw-tl-msg"><%= entry[:message].to_s[0..80] %></div>
+              </div>
+            </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-1">
+  <div class="col-12 pw-fade-in">
+    <div class="pw-card">
+      <div class="pw-card-header">
+        <div class="pw-card-title"><i class="bi bi-lightning-fill"></i> Quick Actions</div>
+      </div>
+      <div class="pw-card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+          <button class="btn btn-pw" onclick="document.getElementById('new-ws-modal') && new bootstrap.Modal(document.getElementById('new-ws-modal')).show()">
+            <i class="bi bi-plus-lg"></i> New Workspace
+          </button>
+          <a href="/workspaces" class="btn btn-ghost">
+            <i class="bi bi-folder2"></i> Manage Workspaces
+          </a>
+          <a href="/services" class="btn btn-ghost">
+            <i class="bi bi-boxes"></i> View Services
+          </a>
+          <a href="/settings" class="btn btn-ghost">
+            <i class="bi bi-gear"></i> Settings
+          </a>
+          <button class="btn btn-ghost" onclick="refreshStatus()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+<script>
+document.getElementById('page-title').textContent = 'Dashboard';
+
+async function syncPush(wsId, btn) {
+  const msg = prompt('Commit message:', 'chore: sync workspace state');
+  if (msg === null) return;
+  withSpinner(btn, '...', async () => {
+    const data = await apiCall(`/sync/push/${wsId}`, 'POST', { message: msg });
+    if (data.success) {
+      showToast(`Pushed successfully${data.sha ? ' (' + data.sha + ')' : ''}`, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast(data.error || 'Push failed', 'error');
+    }
+  });
+}
+
+async function syncPull(wsId, btn) {
+  if (!confirm('Pull latest state from GitHub? Local state will be updated.')) return;
+  withSpinner(btn, '...', async () => {
+    const data = await apiCall(`/sync/pull/${wsId}`, 'POST');
+    if (data.success) {
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast(data.error || 'Pull failed', 'error');
+    }
+  });
+}
+
+async function refreshStatus() {
+  const res = await fetch('/api/status');
+  const data = await res.json();
+  showToast(`Status OK — ${data.workspaces} workspaces, ${data.services} services`, 'info');
+}
+</script>
+<% end %>
