@@ -1,0 +1,3 @@
+# bin
+
+Binary or executables
