@@ -4,13 +4,10 @@
 
 require 'rack'
 require 'puma'
-require 'puma/configuration'
 
 ssl_key  = ENV.fetch('SSL_KEY',  File.join(__dir__, 'config/ssl/server.key'))
 ssl_cert = ENV.fetch('SSL_CERT', File.join(__dir__, 'config/ssl/server.crt'))
-port     = ENV.fetch('PORT', '4567')
-workers  = ENV.fetch('WEB_CONCURRENCY', '1').to_i
-threads  = ENV.fetch('RAILS_MAX_THREADS', '5')
+port     = ENV.fetch('PORT', '4567').to_i
 env      = ENV.fetch('RACK_ENV', 'development')
 
 # Auto-generate self-signed cert in development
@@ -21,7 +18,7 @@ unless File.exist?(ssl_key) && File.exist?(ssl_cert)
   system(
     "openssl req -x509 -nodes -days 3650 -newkey rsa:2048 " \
     "-keyout #{ssl_key} -out #{ssl_cert} " \
-    "-subj '/CN=localhost/O=PortableWork' 2>/dev/null"
+    "-subj '/CN=localhost/O=PortableWork' >/dev/null 2>&1"
   )
 end
 
@@ -37,21 +34,24 @@ puts <<~BANNER
   → Database    : #{ENV.fetch('DATABASE_PATH', './db/workspace.db')}
 BANNER
 
-# Puma config
-#app = Rack::Builder.parse_file(File.join(__dir__, 'config.ru')).first
-app = Rack::Builder.parse_file(File.join(__dir__, 'config.ru'))
+# Load Rack app
+app, _ = Rack::Builder.parse_file(File.join(__dir__, 'config.ru'))
 
 server = Puma::Server.new(app)
 
-# Add SSL binds
-ctx = Puma::MiniSSL::Context.new
-ctx.key  = ssl_key
-ctx.cert = ssl_cert
-ctx.verify_mode = Puma::MiniSSL::VERIFY_NONE
-
-server.add_ssl_listener('0.0.0.0', port.to_i, ctx)
+# ✅ Supported TLS configuration (NO MiniSSL usage)
+server.add_ssl_listener(
+  '0.0.0.0',
+  port,
+  {
+    key:  ssl_key,
+    cert: ssl_cert,
+    verify_mode: 'none'
+  }
+)
 
 trap('INT')  { server.stop }
 trap('TERM') { server.stop }
 
-server.run.join
+server.run
+sleep

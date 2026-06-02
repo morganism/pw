@@ -26,8 +26,8 @@
 
 ```bash
 # 1. Clone this repo
-git clone https://github.com/YOUR_USER/portablework.git
-cd portablework
+git clone https://github.com/morganism/pw.git
+cd pw
 
 # 2. Run setup (generates .env, TLS cert, builds image, starts container)
 chmod +x scripts/setup.sh scripts/sync.sh
@@ -119,7 +119,7 @@ docker compose exec app sqlite3 db/workspace.db ".tables"
 ## Project Structure
 
 ```
-portablework/
+portable-workspace/
 ├── app.rb                 # Sinatra application (routes, DB, helpers)
 ├── start.rb               # Puma HTTPS boot script
 ├── config.ru              # Rack entry point
